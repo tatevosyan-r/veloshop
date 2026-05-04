@@ -35,7 +35,7 @@
         }
         .login-box h2 {
             font-size: 1.8rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
             background: linear-gradient(135deg, #1e6f3f, #2c9c5e);
             background-clip: text;
             -webkit-background-clip: text;
@@ -63,7 +63,6 @@
         }
         .login-box button:hover { background: #1e5f3a; }
         .error { color: #e53e3e; margin-top: 0.8rem; font-size: 0.8rem; }
-        .hint { font-size: 0.7rem; color: #666; margin-top: 1rem; }
 
         /* Стили основного приложения */
         .app-container {
@@ -136,16 +135,11 @@
             border: 1px solid #e9edf2;
             display: flex;
             flex-direction: column;
-            cursor: grab;
             transition: all 0.2s ease;
             user-select: none;
         }
-        .bike-card:active {
-            cursor: grabbing;
-        }
         .bike-card.dragging {
-            opacity: 0.5;
-            cursor: grabbing;
+            opacity: 0.3;
         }
         .bike-card.drag-over {
             transform: scale(1.02);
@@ -158,8 +152,13 @@
             background: #f8fafc;
             cursor: grab;
             color: #94a3b8;
-            font-size: 1.2rem;
+            font-size: 0.85rem;
             border-bottom: 1px solid #e9edf2;
+            transition: background 0.2s;
+        }
+        .drag-handle:hover {
+            background: #e2e8f0;
+            color: #2c7a4d;
         }
         .drag-handle:active {
             cursor: grabbing;
@@ -264,13 +263,14 @@
         }
         .drag-info {
             text-align: center;
-            font-size: 0.7rem;
-            color: #94a3b8;
+            font-size: 0.75rem;
+            color: #64748b;
             margin-bottom: 1rem;
             padding: 0.5rem;
             background: #f1f5f9;
             border-radius: 2rem;
             display: inline-block;
+            width: auto;
         }
 
         /* Модальное окно */
@@ -336,12 +336,10 @@
 <div id="loginScreen" class="login-container">
     <div class="login-box">
         <h2>🚲 ВелоSklad</h2>
-        <div class="hint" style="margin-bottom: 1rem;">Вход в систему управления</div>
-        <input type="text" id="loginUser" placeholder="Логин:" autocomplete="off">
-        <input type="password" id="loginPass" placeholder="Пароль:">
+        <input type="text" id="loginUser" placeholder="Логин" autocomplete="off">
+        <input type="password" id="loginPass" placeholder="Пароль">
         <button id="loginBtn">Войти</button>
         <div class="error" id="errorMsg"></div>
-        <div class="hint">👉 логин: <strong>veloman</strong> (латиница)<br>👉 пароль: <strong>веломан</strong> (русские буквы)</div>
     </div>
 </div>
 
@@ -357,7 +355,7 @@
     </div>
 
     <div style="text-align: center; margin-bottom: 1rem;">
-        <span class="drag-info">⋮⋮ Перетащите карточку за ручку ⋮⋮ для изменения порядка</span>
+        <span class="drag-info">🎯 Перетащите карточку ЗА РУЧКУ (⋮⋮) для изменения порядка</span>
     </div>
 
     <div id="bikesContainer" class="bikes-grid">Загрузка...</div>
@@ -389,7 +387,7 @@
     const sizeOptions = ['S', 'M', 'L', 'XL'];
 
     // Переменные для drag-and-drop
-    let draggedItem = null;
+    let draggedItemId = null;
 
     // Вспомогательные функции
     function recalcRemaining(bike) {
@@ -534,8 +532,13 @@
     }
 
     // Функция перемещения карточки
-    function reorderBikes(fromIndex, toIndex) {
+    function reorderBikes(fromId, toId) {
+        const fromIndex = bikeOrder.indexOf(fromId);
+        const toIndex = bikeOrder.indexOf(toId);
+
+        if (fromIndex === -1 || toIndex === -1) return;
         if (fromIndex === toIndex) return;
+
         const item = bikeOrder[fromIndex];
         bikeOrder.splice(fromIndex, 1);
         bikeOrder.splice(toIndex, 0, item);
@@ -553,8 +556,8 @@
             return;
         }
 
-        container.innerHTML = orderedBikes.map((bike, index) => `
-            <div class="bike-card" data-id="${bike.id}" data-index="${index}" draggable="true">
+        container.innerHTML = orderedBikes.map((bike) => `
+            <div class="bike-card" data-id="${bike.id}" draggable="true">
                 <div class="drag-handle" draggable="true">⋮⋮ перетащить ⋮⋮</div>
                 <div class="card-content">
                     <div class="bike-model">
@@ -590,16 +593,6 @@
             card.addEventListener('dragover', handleDragOver);
             card.addEventListener('dragleave', handleDragLeave);
             card.addEventListener('drop', handleDrop);
-
-            // Для drag-handle, чтобы можно было тянуть за ручку
-            const handle = card.querySelector('.drag-handle');
-            if (handle) {
-                handle.addEventListener('dragstart', (e) => {
-                    e.stopPropagation();
-                    handleDragStart(e);
-                });
-                handle.addEventListener('dragend', handleDragEnd);
-            }
         });
 
         // Обработчики кнопок
@@ -625,48 +618,58 @@
 
     // Drag-and-drop обработчики
     function handleDragStart(e) {
-        draggedItem = this;
+        const card = this.closest('.bike-card');
+        if (!card) return;
+
+        draggedItemId = card.dataset.id;
+        e.dataTransfer.setData('text/plain', draggedItemId);
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', this.innerHTML);
-        this.classList.add('dragging');
+        card.classList.add('dragging');
     }
 
     function handleDragEnd(e) {
-        if (draggedItem) {
-            draggedItem.classList.remove('dragging');
+        const card = this.closest('.bike-card');
+        if (card) {
+            card.classList.remove('dragging');
         }
-        document.querySelectorAll('.bike-card').forEach(card => {
-            card.classList.remove('drag-over');
+        document.querySelectorAll('.bike-card').forEach(c => {
+            c.classList.remove('drag-over');
         });
-        draggedItem = null;
+        draggedItemId = null;
     }
 
     function handleDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
-        if (this !== draggedItem) {
-            this.classList.add('drag-over');
+        const targetCard = this.closest('.bike-card');
+        if (targetCard && targetCard.dataset.id !== draggedItemId) {
+            targetCard.classList.add('drag-over');
         }
     }
 
     function handleDragLeave(e) {
-        this.classList.remove('drag-over');
+        const targetCard = this.closest('.bike-card');
+        if (targetCard) {
+            targetCard.classList.remove('drag-over');
+        }
     }
 
     function handleDrop(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        this.classList.remove('drag-over');
+        const targetCard = this.closest('.bike-card');
+        if (!targetCard) return;
 
-        if (!draggedItem || draggedItem === this) return;
+        targetCard.classList.remove('drag-over');
 
-        const fromIndex = parseInt(draggedItem.dataset.index);
-        const toIndex = parseInt(this.dataset.index);
+        const targetId = targetCard.dataset.id;
 
-        if (!isNaN(fromIndex) && !isNaN(toIndex)) {
-            reorderBikes(fromIndex, toIndex);
+        if (draggedItemId && draggedItemId !== targetId) {
+            reorderBikes(draggedItemId, targetId);
         }
+
+        draggedItemId = null;
     }
 
     // Модальные окна
@@ -850,7 +853,7 @@
         if (user === "veloman" && pass === "веломан") {
             showApp();
         } else {
-            document.getElementById('errorMsg').innerText = 'Неверный логин или пароль. Используйте veloman / веломан';
+            document.getElementById('errorMsg').innerText = 'Неверный логин или пароль';
         }
     };
 

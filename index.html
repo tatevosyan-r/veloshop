@@ -2,32 +2,54 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Велосклад - вход</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ВелоSklad - Учёт и бронирование велосипедов</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+        }
+
         body {
             background: #f2f5f9;
+            min-height: 100vh;
+        }
+
+        /* Стили для экрана входа */
+        .login-container {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            font-family: system-ui;
+            background: #f2f5f9;
         }
         .login-box {
             background: white;
             padding: 2rem;
             border-radius: 2rem;
-            width: 320px;
+            width: 340px;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15);
         }
-        input {
+        .login-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #1e6f3f, #2c9c5e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .login-box input {
             width: 100%;
             padding: 0.7rem;
             margin: 0.5rem 0;
-            border: 1px solid #ccc;
+            border: 1px solid #cbd5e1;
             border-radius: 1rem;
+            font-size: 1rem;
         }
-        button {
+        .login-box button {
             background: #2c7a4d;
             color: white;
             border: none;
@@ -36,41 +58,344 @@
             border-radius: 2rem;
             font-weight: bold;
             cursor: pointer;
+            margin-top: 0.5rem;
+            font-size: 1rem;
         }
-        .error {
-            color: red;
-            margin-top: 1rem;
-            font-size: 0.8rem;
+        .login-box button:hover { background: #1e5f3a; }
+        .error { color: #e53e3e; margin-top: 0.8rem; font-size: 0.8rem; }
+        .hint { font-size: 0.7rem; color: #666; margin-top: 1rem; }
+
+        /* Стили основного приложения (по умолчанию скрыты) */
+        .app-container {
+            display: none;
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 1.5rem;
         }
-        .hint {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 1rem;
+        .shop-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
+        h1 { font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, #1e6f3f, #2c9c5e); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .action-buttons { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .btn { border: none; padding: 0.6rem 1.2rem; font-weight: 600; font-size: 0.85rem; border-radius: 2rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; background: #edf2f7; color: #1e2f3d; }
+        .btn-primary { background: #2c7a4d; color: white; }
+        .btn-primary:hover { background: #1e5f3a; }
+        .btn-outline { background: white; border: 1px solid #cbd5e1; }
+        .btn-outline:hover { background: #f8fafc; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: white; padding: 0.5rem; border-radius: 3rem; width: fit-content; }
+        .tab-btn { padding: 0.6rem 1.5rem; border-radius: 2rem; border: none; background: transparent; cursor: pointer; font-weight: 500; }
+        .tab-btn.active { background: #2c7a4d; color: white; }
+        .bikes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .bike-card { background: white; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid #e9edf2; display: flex; flex-direction: column; }
+        .card-content { padding: 1.2rem; }
+        .bike-model { font-size: 1.25rem; font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .specs { display: flex; gap: 0.5rem; margin: 0.6rem 0; font-size: 0.75rem; color: #475569; flex-wrap: wrap; }
+        .spec-badge { background: #f1f5f9; padding: 0.2rem 0.6rem; border-radius: 20px; }
+        .stats-row { background: #f8fafc; padding: 0.5rem; border-radius: 1rem; margin: 0.8rem 0; display: flex; justify-content: space-between; font-size: 0.8rem; }
+        .remaining-block { background: #eef5f0; border-radius: 1rem; padding: 0.5rem; text-align: center; margin: 0.5rem 0; }
+        .remaining-number { font-size: 1.8rem; font-weight: 800; color: #1a4d2e; }
+        .card-actions { display: flex; gap: 0.5rem; padding: 0.8rem; border-top: 1px solid #edf2f7; }
+        .btn-sell { background: #d97706; color: white; flex:1; border: none; border-radius: 2rem; cursor: pointer; padding: 0.4rem; }
+        .btn-restock { background: #eef2ff; color: #2c5282; flex:1; border: none; border-radius: 2rem; cursor: pointer; }
+        .btn-book { background: #8b5cf6; color: white; flex:1; border: none; border-radius: 2rem; cursor: pointer; }
+        .bookings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+        .booking-card { background: white; border-radius: 1.5rem; padding: 1.2rem; border-left: 6px solid #8b5cf6; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .booking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+        .client-name { font-weight: 700; font-size: 1.1rem; }
+        .badge { background: #e2e8f0; padding: 0.2rem 0.5rem; border-radius: 20px; font-size: 0.7rem; }
+        .booking-bikes { margin: 0.8rem 0; background: #f9f9ff; padding: 0.6rem; border-radius: 1rem; }
+        .booking-bike-item { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.3rem 0; border-bottom: 1px solid #e2e8f0; }
+        .booking-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index:1000; visibility: hidden; opacity: 0; transition:0.2s; }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
+        .modal { background: white; width: 90%; max-width: 550px; border-radius: 1.5rem; padding: 1.5rem; max-height: 80vh; overflow-y: auto; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 500; font-size: 0.85rem; margin-bottom: 0.3rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 1rem; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.2rem; }
+        .empty-state { text-align: center; padding: 2rem; color: #64748b; }
     </style>
 </head>
 <body>
-<div class="login-box">
-    <h2>🚲 ВелоSklad</h2>
-    <input type="text" id="loginUser" placeholder="Логин: veloman" autocomplete="off">
-    <input type="password" id="loginPass" placeholder="Пароль: веломан">
-    <button id="loginBtn">Войти</button>
-    <div class="error" id="errorMsg"></div>
-    <div class="hint">👉 логин: veloman (латиница)<br>👉 пароль: веломан (русские буквы)</div>
+
+<!-- ЭКРАН ВХОДА -->
+<div id="loginScreen" class="login-container">
+    <div class="login-box">
+        <h2>🚲 ВелоSklad</h2>
+        <div class="hint" style="margin-bottom: 1rem;">Вход в систему управления</div>
+        <input type="text" id="loginUser" placeholder="Логин: veloman" autocomplete="off">
+        <input type="password" id="loginPass" placeholder="Пароль: веломан">
+        <button id="loginBtn">Войти</button>
+        <div class="error" id="errorMsg"></div>
+        <div class="hint">👉 логин: <strong>veloman</strong> (латиница)<br>👉 пароль: <strong>веломан</strong> (русские буквы)</div>
+    </div>
+</div>
+
+<!-- ОСНОВНОЕ ПРИЛОЖЕНИЕ -->
+<div id="appContainer" class="app-container">
+    <div class="shop-header">
+        <h1>🚲 ВелоSklad + Бронирование</h1>
+        <div class="action-buttons">
+            <button id="addBikeBtn" class="btn btn-primary">➕ Новый велосипед</button>
+            <button id="globalRestockBtn" class="btn btn-outline">📦 Пополнить</button>
+            <button id="logoutBtn" class="btn btn-outline">🚪 Выйти</button>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="inventory">📋 Инвентарь</button>
+        <button class="tab-btn" data-tab="bookings">📅 Бронирования</button>
+    </div>
+
+    <div id="inventoryTab">
+        <div id="bikesContainer" class="bikes-grid">Загрузка...</div>
+    </div>
+    <div id="bookingsTab" style="display: none;">
+        <div id="bookingsContainer" class="bookings-grid">Загрузка...</div>
+    </div>
+</div>
+
+<!-- Модальное окно -->
+<div id="genericModal" class="modal-overlay">
+    <div class="modal">
+        <h3 id="modalTitle">Заголовок</h3>
+        <div id="modalBody"></div>
+        <div class="modal-buttons" id="modalButtons"></div>
+    </div>
 </div>
 
 <script>
-    document.getElementById('loginBtn').onclick = function() {
+    // ======================== ДАННЫЕ ========================
+    let bikesDatabase = [
+        { id: "b1", model: "Stinger XC 29", size: "M", color: "Черный", quantity: 8, sold: 3, remaining: 5 },
+        { id: "b2", model: "Urban Rider 700", size: "L", color: "Серый", quantity: 12, sold: 7, remaining: 5 },
+        { id: "b3", model: "TrailBlazer PRO", size: "S", color: "Желтый", quantity: 5, sold: 2, remaining: 3 },
+        { id: "b4", model: "E-Mountain GT", size: "XL", color: "Белый", quantity: 4, sold: 1, remaining: 3 }
+    ];
+
+    let bookingsDatabase = [
+        { id: "book1", clientName: "Алексей Иванов", bikes: [{ bikeId: "b1", bikeModel: "Stinger XC 29", size: "M", color: "Черный", quantity: 1 }], createdAt: new Date().toISOString(), status: "активно" }
+    ];
+
+    const colorOptions = ['Черный', 'Белый', 'Желтый', 'Серый'];
+    const colorPreviewMap = { 'Черный':'#2d2d2d','Белый':'#f5f5f5','Желтый':'#facc15','Серый':'#9ca3af' };
+
+    function recalcRemaining(bike) { bike.remaining = bike.quantity - bike.sold; if (bike.remaining < 0) bike.remaining = 0; return bike; }
+    function syncRemainingAll() { bikesDatabase.forEach(b => recalcRemaining(b)); }
+    function persistData() { localStorage.setItem('velo_inventory', JSON.stringify(bikesDatabase)); localStorage.setItem('velo_bookings', JSON.stringify(bookingsDatabase)); }
+    function loadData() {
+        const storedInv = localStorage.getItem('velo_inventory');
+        if (storedInv) { try { bikesDatabase = JSON.parse(storedInv); syncRemainingAll(); } catch(e) {} } else syncRemainingAll();
+        const storedBook = localStorage.getItem('velo_bookings');
+        if (storedBook) { try { bookingsDatabase = JSON.parse(storedBook); } catch(e) {} }
+        persistData();
+    }
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+    function findBikeIndex(id) { return bikesDatabase.findIndex(b => b.id === id); }
+    function getAvailableBikeOptions() { return bikesDatabase.filter(b => b.remaining > 0); }
+
+    // Операции с велосипедами
+    function sellBikeById(id, amount) {
+        const idx = findBikeIndex(id);
+        if (idx === -1 || bikesDatabase[idx].remaining < amount) return { success: false };
+        bikesDatabase[idx].sold += amount;
+        recalcRemaining(bikesDatabase[idx]);
+        persistData(); renderInventory();
+        return { success: true };
+    }
+    function restockBikeById(id, addAmount) {
+        const idx = findBikeIndex(id);
+        if (idx === -1) return;
+        bikesDatabase[idx].quantity += addAmount;
+        recalcRemaining(bikesDatabase[idx]);
+        persistData(); renderInventory();
+    }
+    function addNewBicycle(model, size, color, quantity) {
+        const newId = 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        bikesDatabase.push({ id: newId, model, size, color, quantity: quantity, sold: 0, remaining: quantity });
+        recalcRemaining(bikesDatabase[bikesDatabase.length-1]);
+        persistData(); renderInventory();
+    }
+    function updateBicycle(id, updates) {
+        const idx = findBikeIndex(id);
+        if (idx !== -1) { Object.assign(bikesDatabase[idx], updates); recalcRemaining(bikesDatabase[idx]); persistData(); renderInventory(); }
+    }
+    function deleteBicycle(id) {
+        const idx = findBikeIndex(id);
+        if (idx !== -1) bikesDatabase.splice(idx, 1);
+        persistData(); renderInventory();
+    }
+
+    // Бронирования
+    function addBooking(clientName, selectedBikes) {
+        const bikesToBook = [];
+        for (let sel of selectedBikes) {
+            const bike = bikesDatabase.find(b => b.id === sel.bikeId);
+            if (!bike || bike.remaining < sel.quantity) return { success: false, message: "Недостаточно" };
+            bikesToBook.push({ bikeId: bike.id, bikeModel: bike.model, size: bike.size, color: bike.color, quantity: sel.quantity });
+        }
+        const newBooking = { id: 'book_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), clientName: clientName.trim(), bikes: bikesToBook, createdAt: new Date().toISOString(), status: "активно" };
+        bookingsDatabase.push(newBooking);
+        for (let bb of bikesToBook) {
+            const bike = bikesDatabase.find(b => b.id === bb.bikeId);
+            if (bike) { bike.quantity -= bb.quantity; recalcRemaining(bike); }
+        }
+        persistData(); renderInventory(); renderBookings();
+        return { success: true };
+    }
+    function editBooking(bookingId, newClientName, updatedBikes) {
+        const bookingIdx = bookingsDatabase.findIndex(b => b.id === bookingId);
+        if (bookingIdx === -1) return { success: false };
+        const oldBooking = bookingsDatabase[bookingIdx];
+        for (let old of oldBooking.bikes) {
+            const bike = bikesDatabase.find(b => b.id === old.bikeId);
+            if (bike) { bike.quantity += old.quantity; recalcRemaining(bike); }
+        }
+        const newBikesList = [];
+        for (let sel of updatedBikes) {
+            const bike = bikesDatabase.find(b => b.id === sel.bikeId);
+            if (!bike || bike.remaining < sel.quantity) {
+                for (let old of oldBooking.bikes) {
+                    const bk = bikesDatabase.find(b => b.id === old.bikeId);
+                    if (bk) { bk.quantity -= old.quantity; recalcRemaining(bk); }
+                }
+                return { success: false, message: "Ошибка" };
+            }
+            newBikesList.push({ bikeId: bike.id, bikeModel: bike.model, size: bike.size, color: bike.color, quantity: sel.quantity });
+        }
+        for (let nb of newBikesList) {
+            const bike = bikesDatabase.find(b => b.id === nb.bikeId);
+            if (bike) { bike.quantity -= nb.quantity; recalcRemaining(bike); }
+        }
+        bookingsDatabase[bookingIdx] = { ...oldBooking, clientName: newClientName.trim(), bikes: newBikesList };
+        persistData(); renderInventory(); renderBookings();
+        return { success: true };
+    }
+    function cancelBooking(bookingId) {
+        const bookingIdx = bookingsDatabase.findIndex(b => b.id === bookingId);
+        if (bookingIdx === -1) return;
+        for (let bk of bookingsDatabase[bookingIdx].bikes) {
+            const bike = bikesDatabase.find(b => b.id === bk.bikeId);
+            if (bike) { bike.quantity += bk.quantity; recalcRemaining(bike); }
+        }
+        bookingsDatabase.splice(bookingIdx, 1);
+        persistData(); renderInventory(); renderBookings();
+    }
+
+    // ========== ОТРИСОВКА ==========
+    function renderInventory() {
+        const container = document.getElementById('bikesContainer');
+        if (!bikesDatabase.length) { container.innerHTML = '<div class="empty-state">Нет велосипедов</div>'; return; }
+        container.innerHTML = bikesDatabase.map(bike => `
+            <div class="bike-card">
+                <div class="card-content">
+                    <div class="bike-model"><strong>${escapeHtml(bike.model)}</strong><button class="edit-bike-btn btn-outline" style="padding:0.2rem 0.6rem;" data-id="${bike.id}">✏️</button></div>
+                    <div class="specs"><span class="spec-badge">📏 ${bike.size}</span><span class="spec-badge">🎨 ${bike.color}</span></div>
+                    <div class="stats-row"><span>📦 Поступило: ${bike.quantity}</span><span>✅ Продано: ${bike.sold}</span></div>
+                    <div class="remaining-block"><div class="remaining-number">${bike.remaining} шт.</div></div>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-sell" data-id="${bike.id}">💰 Продать</button>
+                    <button class="btn-restock" data-id="${bike.id}">📦 Пополнить</button>
+                    <button class="btn-book" data-id="${bike.id}">📅 Бронь</button>
+                </div>
+            </div>
+        `).join('');
+        document.querySelectorAll('.btn-sell').forEach(btn => btn.onclick = () => openSellDialog(btn.dataset.id));
+        document.querySelectorAll('.btn-restock').forEach(btn => btn.onclick = () => openRestockDialog(btn.dataset.id));
+        document.querySelectorAll('.btn-book').forEach(btn => btn.onclick = () => openQuickBookDialog(btn.dataset.id));
+        document.querySelectorAll('.edit-bike-btn').forEach(btn => btn.onclick = () => openEditBikeDialog(btn.dataset.id));
+    }
+
+    function renderBookings() {
+        const container = document.getElementById('bookingsContainer');
+        if (!bookingsDatabase.length) { container.innerHTML = '<div class="empty-state">Нет бронирований</div>'; return; }
+        container.innerHTML = bookingsDatabase.map(book => `
+            <div class="booking-card">
+                <div class="booking-header"><span class="client-name">👤 ${escapeHtml(book.clientName)}</span><span class="badge">${book.status}</span></div>
+                <div class="booking-bikes">${book.bikes.map(b => `<div class="booking-bike-item"><span>🚲 ${escapeHtml(b.bikeModel)} (${b.size}, ${b.color})</span><span>×${b.quantity}</span></div>`).join('')}</div>
+                <div class="booking-actions"><button class="btn-outline edit-booking-btn" data-id="${book.id}" style="flex:1;">✏️ Редактировать</button><button class="btn-danger cancel-booking-btn" data-id="${book.id}" style="flex:1;">❌ Отменить</button></div>
+            </div>
+        `).join('');
+        document.querySelectorAll('.edit-booking-btn').forEach(btn => btn.onclick = () => openEditBookingDialog(btn.dataset.id));
+        document.querySelectorAll('.cancel-booking-btn').forEach(btn => btn.onclick = () => { if(confirm('Отменить бронь?')) cancelBooking(btn.dataset.id); });
+    }
+
+    // Модальные окна (упрощённо)
+    const modalOverlay = document.getElementById('genericModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalButtonsDiv = document.getElementById('modalButtons');
+    function closeModal() { modalOverlay.classList.remove('active'); }
+    function openModal(title, bodyHtml, onConfirm, confirmText = 'ОК') {
+        modalTitle.innerText = title;
+        modalBody.innerHTML = bodyHtml;
+        modalButtonsDiv.innerHTML = '';
+        const cancelBtn = document.createElement('button'); cancelBtn.className = 'btn-outline'; cancelBtn.textContent = 'Отмена'; cancelBtn.onclick = closeModal;
+        modalButtonsDiv.appendChild(cancelBtn);
+        const okBtn = document.createElement('button'); okBtn.className = 'btn-primary'; okBtn.textContent = confirmText; okBtn.onclick = () => { if(onConfirm()) closeModal(); };
+        modalButtonsDiv.appendChild(okBtn);
+        modalOverlay.classList.add('active');
+    }
+
+    function openSellDialog(id) { const bike = bikesDatabase.find(b => b.id === id); openModal('Продажа', `<input type="number" id="sellQty" value="1" min="1" max="${bike.remaining}">`, () => { sellBikeById(id, parseInt(document.getElementById('sellQty')?.value)||1); alert('Продано'); return true; }, 'Продать'); }
+    function openRestockDialog(id) { openModal('Пополнение', `<input type="number" id="restockQty" value="1" min="1">`, () => { restockBikeById(id, parseInt(document.getElementById('restockQty')?.value)||1); alert('Пополнено'); return true; }, 'Пополнить'); }
+    function openEditBikeDialog(id) { const bike = bikesDatabase.find(b => b.id === id); openModal('Редактировать', `<input id="editModel" value="${bike.model}"><select id="editSize">${['S','M','L','XL'].map(s=>`<option ${bike.size===s?'selected':''}>${s}</option>`)}</select><select id="editColor">${colorOptions.map(c=>`<option ${bike.color===c?'selected':''}>${c}</option>`)}</select><input id="editQty" type="number" value="${bike.quantity}"><input id="editSold" type="number" value="${bike.sold}">`, () => { updateBicycle(id, { model: document.getElementById('editModel').value, size: document.getElementById('editSize').value, color: document.getElementById('editColor').value, quantity: parseInt(document.getElementById('editQty').value), sold: parseInt(document.getElementById('editSold').value) }); return true; }, 'Сохранить'); }
+    function openQuickBookDialog(bikeId) { const bike = bikesDatabase.find(b => b.id === bikeId); openModal('Бронирование', `<input id="clientName" placeholder="Имя клиента"><input type="number" id="bookQty" value="1" min="1" max="${bike.remaining}">`, () => { let name = document.getElementById('clientName')?.value.trim(); if(!name) { alert('Введите имя'); return false; } let qty = parseInt(document.getElementById('bookQty')?.value)||1; let res = addBooking(name, [{ bikeId, quantity: qty }]); alert(res.success ? 'Забронировано' : 'Ошибка'); return res.success; }, 'Забронировать'); }
+    function openEditBookingDialog(bookingId) { const book = bookingsDatabase.find(b => b.id === bookingId); if(!book) return; let bikeOptions = getAvailableBikeOptions().map(b=>`<option value="${b.id}">${b.model} (${b.size}, ${b.color})</option>`).join(''); openModal('Редактировать бронь', `<input id="editClientName" value="${book.clientName}"><div id="editBikesList">${book.bikes.map((b,idx)=>`<div><select class="bikeSelect">${bikeOptions.replace(`value="${b.bikeId}"`, `value="${b.bikeId}" selected`)}</select><input type="number" class="bikeQty" value="${b.quantity}" min="1"><button class="removeBikeBtn">❌</button></div>`).join('')}</div><button id="addBikeBtnModal">+ Добавить</button>`, () => { let newName = document.getElementById('editClientName').value.trim(); let bikes = []; document.querySelectorAll('.bikeSelect').forEach((sel,i)=>{ let qty = parseInt(document.querySelectorAll('.bikeQty')[i]?.value)||1; bikes.push({ bikeId: sel.value, quantity: qty }); }); if(!bikes.length) { alert('Добавьте хотя бы один велосипед'); return false; } let res = editBooking(bookingId, newName, bikes); alert(res.success ? 'Обновлено' : 'Ошибка'); return res.success; }, 'Обновить'); setTimeout(()=>{ document.getElementById('addBikeBtnModal')?.addEventListener('click',()=>{ const div=document.createElement('div'); div.innerHTML=`<select class="bikeSelect">${bikeOptions}</select><input type="number" class="bikeQty" value="1" min="1"><button class="removeBikeBtn">❌</button>`; document.getElementById('editBikesList').appendChild(div); div.querySelector('.removeBikeBtn').onclick=()=>div.remove(); }); document.querySelectorAll('.removeBikeBtn').forEach(btn=>btn.onclick=e=>e.target.parentElement.remove()); },10); }
+
+    // Кнопки основного интерфейса
+    document.getElementById('addBikeBtn').onclick = () => openModal('Новый велосипед', `<input id="newModel" placeholder="Модель"><select id="newSize">${['S','M','L','XL'].map(s=>`<option>${s}</option>`)}</select><select id="newColor">${colorOptions.map(c=>`<option>${c}</option>`)}</select><input id="newQty" type="number" value="0">`, () => { let m=document.getElementById('newModel').value.trim(); if(!m){alert('Введите модель'); return false;} addNewBicycle(m, document.getElementById('newSize').value, document.getElementById('newColor').value, parseInt(document.getElementById('newQty').value)||0); alert('Добавлено'); return true; }, 'Добавить');
+    document.getElementById('globalRestockBtn').onclick = () => { let opts = bikesDatabase.map(b=>`<option value="${b.id}">${b.model} (остаток ${b.remaining})</option>`).join(''); openModal('Пополнить', `<select id="globalBikeId">${opts}</select><input id="globalQty" type="number" value="1">`, () => { restockBikeById(document.getElementById('globalBikeId').value, parseInt(document.getElementById('globalQty').value)||1); alert('Готово'); return true; }, 'Пополнить'); };
+
+    // Табы
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('inventoryTab').style.display = btn.dataset.tab === 'inventory' ? 'block' : 'none';
+            document.getElementById('bookingsTab').style.display = btn.dataset.tab === 'bookings' ? 'block' : 'none';
+            if(btn.dataset.tab === 'bookings') renderBookings(); else renderInventory();
+        };
+    });
+
+    // АВТОРИЗАЦИЯ
+    function showApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'block';
+        loadData();
+        renderInventory();
+        renderBookings();
+    }
+    document.getElementById('loginBtn').onclick = () => {
         const user = document.getElementById('loginUser').value.trim();
         const pass = document.getElementById('loginPass').value.trim();
         if (user === "veloman" && pass === "веломан") {
-            alert("✅ Доступ разрешён! Перенаправление...");
-            // Здесь можно перейти к основному приложению
-            window.location.href = "ваш_основной_файл.html"; // или показать основной интерфейс
+            showApp();
         } else {
-            document.getElementById('errorMsg').innerText = 'Неверный логин или пароль. Используйте veloman / веломан';
+            document.getElementById('errorMsg').innerText = 'Неверный логин или пароль';
         }
     };
+    document.getElementById('logoutBtn').onclick = () => {
+        document.getElementById('appContainer').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('errorMsg').innerText = '';
+    };
+    // Enter на форме входа
+    document.getElementById('loginPass').addEventListener('keypress', (e) => { if(e.key === 'Enter') document.getElementById('loginBtn').click(); });
 </script>
 </body>
 </html>

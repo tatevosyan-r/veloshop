@@ -121,7 +121,7 @@
         }
         .btn-outline:hover { background: #f8fafc; }
 
-        /* Сетка карточек */
+        /* Сетка карточек с поддержкой drag-and-drop */
         .bikes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -136,6 +136,33 @@
             border: 1px solid #e9edf2;
             display: flex;
             flex-direction: column;
+            cursor: grab;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .bike-card:active {
+            cursor: grabbing;
+        }
+        .bike-card.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .bike-card.drag-over {
+            transform: scale(1.02);
+            border: 2px dashed #2c7a4d;
+            background: #f0fdf4;
+        }
+        .drag-handle {
+            padding: 0.5rem;
+            text-align: center;
+            background: #f8fafc;
+            cursor: grab;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #e9edf2;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
         }
         .card-content {
             padding: 1.2rem;
@@ -235,6 +262,16 @@
             font-size: 0.75rem;
             color: #6c7a8e;
         }
+        .drag-info {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #f1f5f9;
+            border-radius: 2rem;
+            display: inline-block;
+        }
 
         /* Модальное окно */
         .modal-overlay {
@@ -319,6 +356,10 @@
         </div>
     </div>
 
+    <div style="text-align: center; margin-bottom: 1rem;">
+        <span class="drag-info">⋮⋮ Перетащите карточку за ручку ⋮⋮ для изменения порядка</span>
+    </div>
+
     <div id="bikesContainer" class="bikes-grid">Загрузка...</div>
     <footer>Управляйте остатками: продажа, пополнение, добавление и редактирование моделей</footer>
 </div>
@@ -341,8 +382,14 @@
         { id: "b4", model: "E-Mountain GT", size: "XL", color: "Белый", quantity: 4, sold: 1, remaining: 3 }
     ];
 
+    // Порядок карточек (массив id)
+    let bikeOrder = [];
+
     const colorOptions = ['Черный', 'Белый', 'Желтый', 'Серый'];
     const sizeOptions = ['S', 'M', 'L', 'XL'];
+
+    // Переменные для drag-and-drop
+    let draggedItem = null;
 
     // Вспомогательные функции
     function recalcRemaining(bike) {
@@ -357,6 +404,7 @@
 
     function persistData() {
         localStorage.setItem('velo_inventory', JSON.stringify(bikesDatabase));
+        localStorage.setItem('bike_order', JSON.stringify(bikeOrder));
     }
 
     function loadData() {
@@ -369,7 +417,40 @@
         } else {
             syncRemainingAll();
         }
+
+        // Загружаем порядок карточек
+        const storedOrder = localStorage.getItem('bike_order');
+        if (storedOrder) {
+            try {
+                bikeOrder = JSON.parse(storedOrder);
+                // Проверяем, что все id из порядка существуют в базе
+                const validIds = bikesDatabase.map(b => b.id);
+                bikeOrder = bikeOrder.filter(id => validIds.includes(id));
+                // Добавляем новые велосипеды в конец порядка
+                const missingIds = validIds.filter(id => !bikeOrder.includes(id));
+                bikeOrder.push(...missingIds);
+            } catch(e) {
+                initOrderFromDatabase();
+            }
+        } else {
+            initOrderFromDatabase();
+        }
+
         persistData();
+    }
+
+    function initOrderFromDatabase() {
+        bikeOrder = bikesDatabase.map(b => b.id);
+    }
+
+    function saveOrder() {
+        localStorage.setItem('bike_order', JSON.stringify(bikeOrder));
+    }
+
+    // Получить велосипеды в правильном порядке
+    function getBikesInOrder() {
+        const bikeMap = new Map(bikesDatabase.map(b => [b.id, b]));
+        return bikeOrder.filter(id => bikeMap.has(id)).map(id => bikeMap.get(id));
     }
 
     function escapeHtml(str) {
@@ -381,7 +462,7 @@
         return bikesDatabase.findIndex(b => b.id === id);
     }
 
-    // CRUD операции
+    // CRUD операции с обновлением порядка
     function sellBikeById(id, amount) {
         const idx = findBikeIndex(id);
         if (idx === -1) return { success: false, message: "Велосипед не найден" };
@@ -419,6 +500,9 @@
         };
         recalcRemaining(newBike);
         bikesDatabase.push(newBike);
+        // Добавляем новый велосипед в конец порядка
+        bikeOrder.push(newId);
+        saveOrder();
         persistData();
         renderBikes();
         return { success: true };
@@ -440,21 +524,38 @@
         const idx = findBikeIndex(id);
         if (idx !== -1) {
             bikesDatabase.splice(idx, 1);
+            // Удаляем из порядка
+            const orderIdx = bikeOrder.indexOf(id);
+            if (orderIdx !== -1) bikeOrder.splice(orderIdx, 1);
+            saveOrder();
             persistData();
             renderBikes();
         }
     }
 
-    // Рендер карточек
+    // Функция перемещения карточки
+    function reorderBikes(fromIndex, toIndex) {
+        if (fromIndex === toIndex) return;
+        const item = bikeOrder[fromIndex];
+        bikeOrder.splice(fromIndex, 1);
+        bikeOrder.splice(toIndex, 0, item);
+        saveOrder();
+        renderBikes();
+    }
+
+    // Рендер карточек с drag-and-drop
     function renderBikes() {
         const container = document.getElementById('bikesContainer');
-        if (!bikesDatabase.length) {
+        const orderedBikes = getBikesInOrder();
+
+        if (!orderedBikes.length) {
             container.innerHTML = '<div class="empty-state">🚲 Инвентарь пуст. Нажмите "Новый велосипед" чтобы добавить первую модель</div>';
             return;
         }
 
-        container.innerHTML = bikesDatabase.map(bike => `
-            <div class="bike-card">
+        container.innerHTML = orderedBikes.map((bike, index) => `
+            <div class="bike-card" data-id="${bike.id}" data-index="${index}" draggable="true">
+                <div class="drag-handle" draggable="true">⋮⋮ перетащить ⋮⋮</div>
                 <div class="card-content">
                     <div class="bike-model">
                         <strong>${escapeHtml(bike.model)}</strong>
@@ -480,16 +581,92 @@
             </div>
         `).join('');
 
-        // Обработчики
+        // Добавляем обработчики drag-and-drop
+        const cards = document.querySelectorAll('.bike-card');
+
+        cards.forEach(card => {
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleDragOver);
+            card.addEventListener('dragleave', handleDragLeave);
+            card.addEventListener('drop', handleDrop);
+
+            // Для drag-handle, чтобы можно было тянуть за ручку
+            const handle = card.querySelector('.drag-handle');
+            if (handle) {
+                handle.addEventListener('dragstart', (e) => {
+                    e.stopPropagation();
+                    handleDragStart(e);
+                });
+                handle.addEventListener('dragend', handleDragEnd);
+            }
+        });
+
+        // Обработчики кнопок
         document.querySelectorAll('.btn-sell').forEach(btn => {
-            btn.onclick = () => openSellDialog(btn.dataset.id);
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                openSellDialog(btn.dataset.id);
+            };
         });
         document.querySelectorAll('.btn-restock').forEach(btn => {
-            btn.onclick = () => openRestockDialog(btn.dataset.id);
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                openRestockDialog(btn.dataset.id);
+            };
         });
         document.querySelectorAll('.edit-icon').forEach(btn => {
-            btn.onclick = () => openEditDialog(btn.dataset.id);
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                openEditDialog(btn.dataset.id);
+            };
         });
+    }
+
+    // Drag-and-drop обработчики
+    function handleDragStart(e) {
+        draggedItem = this;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.innerHTML);
+        this.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+        if (draggedItem) {
+            draggedItem.classList.remove('dragging');
+        }
+        document.querySelectorAll('.bike-card').forEach(card => {
+            card.classList.remove('drag-over');
+        });
+        draggedItem = null;
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (this !== draggedItem) {
+            this.classList.add('drag-over');
+        }
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        this.classList.remove('drag-over');
+
+        if (!draggedItem || draggedItem === this) return;
+
+        const fromIndex = parseInt(draggedItem.dataset.index);
+        const toIndex = parseInt(this.dataset.index);
+
+        if (!isNaN(fromIndex) && !isNaN(toIndex)) {
+            reorderBikes(fromIndex, toIndex);
+        }
     }
 
     // Модальные окна
@@ -497,7 +674,6 @@
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
     const modalButtonsDiv = document.getElementById('modalButtons');
-    let currentConfirm = null;
 
     function closeModal() {
         modalOverlay.classList.remove('active');
